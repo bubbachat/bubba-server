@@ -1,0 +1,4 @@
+# Build directories
+cmake-build-*/
+build/
+tmp/
