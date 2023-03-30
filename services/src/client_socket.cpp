@@ -20,8 +20,8 @@
 
 namespace
 {
-constexpr std::string_view port = "8000";
-constexpr size_t max_connections = 5;
+constexpr std::string_view server_address = "localhost";
+constexpr std::string_view server_port = "8000";
 }
 
 namespace services
@@ -32,9 +32,14 @@ ClientSocket::ClientSocket()
     addrinfo hints, *res;
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_socktype = SOCK_STREAM;
 
-    getaddrinfo("localhost", port.data(), &hints, &res);
+    if (int status = getaddrinfo(server_address.data(), server_port.data(), &hints, &res); status != 0)
+    {
+        std::stringstream err_msg;
+        err_msg << "Socket getaddrinfo failed: " << gai_strerror(status) << "\n";
+        throw std::runtime_error(err_msg.str());
+    }
 
     client_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     if (client_fd < 0)
@@ -66,14 +71,12 @@ ClientSocket::ClientSocket()
         err_msg << "Socket send failed: " << std::strerror(errno) << "\n";
         throw std::runtime_error(err_msg.str());
     }
-    printf("Hello message sent\n");
-
+    std::cerr << "Message sent: " << msg << "\n";
 }
 
 ClientSocket::~ClientSocket()
 {
     std::cerr << "~ClientSocket:\n";
-    // shutdown(client_fd, SHUT_RDWR);
     close(client_fd);
 }
 

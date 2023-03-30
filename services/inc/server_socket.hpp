@@ -9,5 +9,6 @@ public:
 
 private:
     int server_fd;
+    int client_connection_fd;
 };
 }
