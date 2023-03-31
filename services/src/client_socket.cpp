@@ -1,28 +1,28 @@
 #include "client_socket.hpp"
 
-#include <stdexcept>
-#include <sys/socket.h>
-#include <sstream>
-#include <string_view>
-
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/un.h>
 #include <unistd.h>
+
 #include <cerrno>
 #include <cstring>
 #include <iostream>
-#include <sys/types.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <sys/un.h>
+#include <sstream>
+#include <stdexcept>
+#include <string_view>
 
 namespace
 {
 constexpr std::string_view server_address = "localhost";
 constexpr std::string_view server_port = "8000";
-}
+} // namespace
 
 namespace services
 {
@@ -34,10 +34,13 @@ ClientSocket::ClientSocket()
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    if (int status = getaddrinfo(server_address.data(), server_port.data(), &hints, &res); status != 0)
+    if (int status = getaddrinfo(server_address.data(), server_port.data(),
+                                 &hints, &res);
+        status != 0)
     {
         std::stringstream err_msg;
-        err_msg << "Socket getaddrinfo failed: " << gai_strerror(status) << "\n";
+        err_msg << "Socket getaddrinfo failed: " << gai_strerror(status)
+                << "\n";
         throw std::runtime_error(err_msg.str());
     }
 
@@ -50,7 +53,8 @@ ClientSocket::ClientSocket()
     }
 
     int opt = 1;
-    if (setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0)
+    if (setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
+                   sizeof(opt)) < 0)
     {
         std::stringstream err_msg;
         err_msg << "Socket setsockopt failed: " << std::strerror(errno) << "\n";
@@ -80,4 +84,4 @@ ClientSocket::~ClientSocket()
     close(client_fd);
 }
 
-}
+} // namespace services

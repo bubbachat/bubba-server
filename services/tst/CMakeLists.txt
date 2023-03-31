@@ -30,7 +30,7 @@ set(SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-                      ${CMAKE_PROJECT_NAME}_lib 
+                      ${CMAKE_PROJECT_NAME}_lib
                       gtest
                       gtest_main)
 
@@ -46,5 +46,3 @@ add_dependencies(run-${PROJECT_NAME} ${PROJECT_NAME})
 add_dependencies(run-tests run-${PROJECT_NAME})
 
 add_test(${PROJECT_NAME} ${PROJECT_NAME})
-
-

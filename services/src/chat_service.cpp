@@ -3,7 +3,8 @@
 namespace services
 {
 
-bool ChatService::sendMessage(std::string message) {
+bool ChatService::sendMessage(std::string message)
+{
     std::cout << "sending message " << message << std::endl;
 
     return true;

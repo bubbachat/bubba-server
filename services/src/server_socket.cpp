@@ -1,22 +1,22 @@
 #include "server_socket.hpp"
 
-#include <stdexcept>
-#include <sys/socket.h>
 #include <sstream>
+#include <stdexcept>
 #include <string_view>
+#include <sys/socket.h>
 
+#include <arpa/inet.h>
+#include <cerrno>
+#include <cstring>
+#include <iostream>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <cerrno>
-#include <cstring>
-#include <iostream>
 #include <sys/types.h>
-#include <netdb.h>
-#include <arpa/inet.h>
 #include <sys/un.h>
+#include <unistd.h>
 
 namespace
 {
@@ -24,7 +24,7 @@ constexpr std::string_view address = "localhost";
 constexpr std::string_view port = "8000";
 constexpr size_t max_connections = 1;
 constexpr size_t BUFFER_SIZE = 100;
-}
+} // namespace
 
 namespace services
 {
@@ -38,10 +38,12 @@ ServerSocket::ServerSocket()
 
     getaddrinfo(address.data(), port.data(), &hints, &res);
 
-    if (int status = getaddrinfo(address.data(), port.data(), &hints, &res); status != 0)
+    if (int status = getaddrinfo(address.data(), port.data(), &hints, &res);
+        status != 0)
     {
         std::stringstream err_msg;
-        err_msg << "Socket getaddrinfo failed: " << gai_strerror(status) << "\n";
+        err_msg << "Socket getaddrinfo failed: " << gai_strerror(status)
+                << "\n";
         throw std::runtime_error(err_msg.str());
     }
 
@@ -54,7 +56,8 @@ ServerSocket::ServerSocket()
     }
 
     int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0)
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
+                   sizeof(opt)) < 0)
     {
         std::stringstream err_msg;
         err_msg << "Socket setsockopt failed: " << std::strerror(errno) << "\n";
@@ -77,7 +80,8 @@ ServerSocket::ServerSocket()
 
     sockaddr_storage client_addr;
     socklen_t client_addr_size;
-    int client_connection_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_size);
+    int client_connection_fd =
+        accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_size);
     if (client_connection_fd < 0)
     {
         std::stringstream err_msg;
@@ -103,4 +107,4 @@ ServerSocket::~ServerSocket()
     close(server_fd);
 }
 
-}
+} // namespace services

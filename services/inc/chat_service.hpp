@@ -5,10 +5,10 @@
 namespace services
 {
 
-class ChatService 
+class ChatService
 {
 public:
     bool sendMessage(std::string message);
 };
 
-} // end namespace servicecs
+} // namespace services

@@ -64,5 +64,6 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "variant": "cpp"
-    }
+    },
+    "editor.formatOnSave": true
 }
