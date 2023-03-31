@@ -1,0 +1,9 @@
+---
+# https://cmake-format.readthedocs.io/en/latest/configopts.html
+format:
+  always_wrap:
+  - add_library
+  - target_include_directories
+  - target_link_libraries
+  autosort: true
+  dangle_parens: true

@@ -1,6 +1,7 @@
 ---
 <!-- https://clang.llvm.org/docs/ClangFormatStyleOptions.html -->
 BasedOnStyle: Google
-IndentWidth: 4
-BreakBeforeBraces: Allman
+
 AccessModifierOffset: -4
+BreakBeforeBraces: Allman
+IndentWidth: 4
