@@ -2,3 +2,6 @@
 cmake-build-*/
 build/
 tmp/
+
+# other
+.cache/
