@@ -5,12 +5,28 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(bubba-server)
 
-include_directories(services/inc)
+include_directories(
+  entities/inc
+  repositories/inc
+  services/inc)
+
+find_library(PQXX_LIB pqxx REQUIRED)
+find_library(PQ_LIB pq REQUIRED)
 
 add_library(
   ${CMAKE_PROJECT_NAME}-lib SHARED
-  server_main.cpp services/src/chat_service.cpp services/src/client_socket.cpp
+  entities/src/user_entity.cpp
+  repositories/src/user_repository.cpp
+  server_main.cpp
+  services/src/chat_service.cpp
+  services/src/client_socket.cpp
   services/src/server_socket.cpp
+)
+
+target_link_libraries(
+  ${CMAKE_PROJECT_NAME}-lib
+  ${PQXX_LIB}
+  ${PQ_LIB}
 )
 
 add_executable(${CMAKE_PROJECT_NAME} server_main.cpp)
