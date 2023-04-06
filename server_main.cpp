@@ -7,7 +7,7 @@
 int main(){
 
 	services::ChatService chatService;
-	chatService.sendMessage("hello world");
+	chatService.SendMessage("hello world");
 
 	services::ServerSocket server;
 

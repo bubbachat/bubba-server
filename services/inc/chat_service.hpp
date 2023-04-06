@@ -1,9 +1,13 @@
 #pragma once
 
+
+#include "client_socket.hpp"
 #include "user_entity.hpp"
+#include "user_repository.hpp"
 
 #include <iostream>
 #include <vector>
+#include <memory>
 
 namespace services
 {
@@ -11,10 +15,14 @@ namespace services
 class ChatService
 {
 public:
-    void checkInUser(std::string name);
-    bool sendMessage(std::string message);
+    explicit ChatService();
+    void CheckInUser(std::string name);
+    std::vector<entities::UserEntity> GetOnlineUsers();
+    bool SendMessage(std::string message);
 private:
-    std::vector<entities::UserEntity> checked_in_users_;
+    std::unique_ptr<services::ClientSocket> client_socket_;
+    std::unique_ptr<repositories::UserRepository> user_repository_;
+    std::unique_ptr<entities::UserEntity> user_;
 };
 
 } // namespace services

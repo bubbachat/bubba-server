@@ -1,6 +1,5 @@
 #include "user_repository.hpp"
 
-#include <iostream>
 #include <pqxx/connection.hxx>
 #include <pqxx/pqxx>
 
@@ -9,38 +8,43 @@ namespace repositories
 
 UserRepository::UserRepository()
 {
-    try 
-    {
-        std::string connection_str = "user = " + repositories::kDbUser + \
-                " host=" + repositories::kDbHostName + " port=" + repositories::kDbPort + \
-                " dbname=" + repositories::kDbName + " target_session_attrs=read-write";
+    std::string connection_str = "user = " + repositories::kDbUser + \
+            " host=" + repositories::kDbHostName + " port=" + repositories::kDbPort + \
+            " dbname=" + repositories::kDbName + " target_session_attrs=read-write";
+    db_connection_ = std::make_unique<pqxx::connection>(connection_str);
+}
 
-        db_connection_ = std::make_unique<pqxx::connection>(connection_str);
-
-        if (db_connection_->is_open())
-        {
-            std::cout << "db connection successful" << std::endl;
-        }
-        else
-        {
-            std::cerr << "connection to db could not be established" << std::endl;
-            throw std::runtime_error("unable to open connection to database");
-        }
-    }
-    catch (const std::exception &e) 
+void UserRepository::CreateUser(std::string name) 
+{
+    pqxx::work transaction(*db_connection_);
+    pqxx::result res = transaction.exec("SELECT * FROM users where username='" + name + "'");
+    if (res.size() == 0)
     {
-        std::cerr << e.what() << std::endl;
+        std::string insert_str = "INSERT INTO " + kTableName + " (username, present) VALUES ('" + name + "','" + \
+                                    std::to_string(static_cast<bool>(UserStatus::kOnline)) + "')";
+        transaction.exec(insert_str);
+        transaction.commit();
     }
 }
 
-bool UserRepository::createUser(std::string name) 
+void UserRepository::SetUserStatus(std::string name, UserStatus status)
 {
-    pqxx::work work_transaction(*db_connection_);
-    std::string insert_str = "INSERT INTO " + kTableName + "(username) VALUES ('" + name + "')";
-    work_transaction.exec(insert_str);
-    work_transaction.commit();
+    pqxx::work transaction{*db_connection_};
+    std::string update_str = "UPDATE " + kTableName + " SET present='" + std::to_string(static_cast<bool>(status)) + \
+                                "' WHERE username='" + name  + "'";
+    transaction.exec(update_str);
+    transaction.commit();
+}
 
-    return true;
+std::vector<std::string> UserRepository::GetOnlineUsers()
+{
+    std::vector<std::string> users;
+    pqxx::work transaction{*db_connection_};
+    for (const auto [name] : transaction.query<std::string>("SELECT username FROM users where present='1'"))
+    {
+        users.push_back(name);
+    }
+    return users;
 }
 
 } // namespace repositories 

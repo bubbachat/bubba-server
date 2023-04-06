@@ -10,9 +10,6 @@ include_directories(
   repositories/inc
   services/inc)
 
-find_library(PQXX_LIB pqxx REQUIRED)
-find_library(PQ_LIB pq REQUIRED)
-
 add_library(
   ${CMAKE_PROJECT_NAME}-lib SHARED
   entities/src/user_entity.cpp
@@ -25,8 +22,8 @@ add_library(
 
 target_link_libraries(
   ${CMAKE_PROJECT_NAME}-lib
-  ${PQXX_LIB}
-  ${PQ_LIB}
+  pqxx
+  pq
 )
 
 add_executable(${CMAKE_PROJECT_NAME} server_main.cpp)

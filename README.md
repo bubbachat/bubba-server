@@ -4,8 +4,19 @@ This repo contains the bubba chat server.
 
 # Dependencies
 
+## libpq-dev:
+
 ```
-sudo apt install install libpqxx-dev libpq-dev
+sudo apt install install libpq-dev
+```
+
+## libpqxx:
+```
+git clone https://github.com/jtv/libpqxx
+cd libpqxx
+./configure --disable-documentation CXXFLAGS='-fPIC'
+make
+sudo make install
 ```
 
 # Building
