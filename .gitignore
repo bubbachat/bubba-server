@@ -5,3 +5,4 @@ tmp/
 
 # other
 .cache/
+compile_commands.json

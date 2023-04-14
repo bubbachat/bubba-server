@@ -18,7 +18,7 @@ public:
     explicit ChatService();
     void CheckInUser(std::string name);
     std::vector<entities::UserEntity> GetOnlineUsers();
-    bool SendMessage(std::string message);
+    void SendMessage(std::string message, std::string target_user);
 private:
     std::unique_ptr<services::ClientSocket> client_socket_;
     std::unique_ptr<repositories::UserRepository> user_repository_;

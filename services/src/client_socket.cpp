@@ -1,5 +1,7 @@
 #include "client_socket.hpp"
 
+#include "chat_message.pb.h"
+
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -17,17 +19,21 @@
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
+#include <thread>
 
 namespace
 {
 constexpr std::string_view server_address = "localhost";
 constexpr std::string_view server_port = "8000";
+constexpr size_t BUFFER_SIZE = 100;
+const std::string green("\033[1;32m");
+const std::string reset("\033[0m");
 } // namespace
 
 namespace services
 {
 
-ClientSocket::ClientSocket()
+ClientSocket::ClientSocket(int id)
 {
     addrinfo hints, *res;
     memset(&hints, 0, sizeof hints);
@@ -68,7 +74,10 @@ ClientSocket::ClientSocket()
         throw std::runtime_error(err_msg.str());
     }
 
-    std::string msg{"Hello from client"};
+    protocol::ChatMessage connect_msg;
+    connect_msg.set_sender_id(id);
+    auto msg = connect_msg.SerializeAsString();
+
     if (send(client_fd, msg.c_str(), msg.size() + 1, 0) < 0)
     {
         std::stringstream err_msg;
@@ -76,12 +85,53 @@ ClientSocket::ClientSocket()
         throw std::runtime_error(err_msg.str());
     }
     std::cerr << "Message sent: " << msg << "\n";
+
+    std::thread th(&ClientSocket::ReceiveMessage, this, client_fd);
+
+    th.detach();
+}
+
+void ClientSocket::SendMessage(std::string message, std::string sender_name, int sender_id, int destination_id) {
+    
+    protocol::ChatMessage snd_msg;
+    snd_msg.set_sender_id(sender_id);
+    snd_msg.set_destination_id(destination_id);
+    snd_msg.set_sender_name(sender_name);
+    snd_msg.set_msg(message);
+
+    auto msg = snd_msg.SerializeAsString();
+
+    if (send(client_fd, msg.c_str(), msg.size() + 1, 0) < 0)
+    {
+        std::stringstream err_msg;
+        err_msg << "Socket send failed: " << std::strerror(errno) << "\n";
+        throw std::runtime_error(err_msg.str());
+    }
 }
 
 ClientSocket::~ClientSocket()
 {
     std::cerr << "~ClientSocket:\n";
     close(client_fd);
+}
+
+void ClientSocket::ReceiveMessage(int client_fd)
+{
+    char buffer[BUFFER_SIZE];
+    while (1)
+    {
+        int bytes_read = recv(client_fd, buffer, sizeof(buffer),0);
+        if (bytes_read < 0)
+        {
+            std::stringstream err_msg;
+            err_msg << "Socket recv failed: " << std::strerror(errno) << "\n";
+            throw std::runtime_error(err_msg.str());
+        }
+        protocol::ChatMessage rcv_msg;
+        rcv_msg.ParseFromString(buffer);
+
+        std::cout << green << rcv_msg.sender_name() << ": " << reset << rcv_msg.msg()  << "\n";
+    }
 }
 
 } // namespace services

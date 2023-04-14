@@ -1,5 +1,6 @@
 #pragma once
 
+#include "user_entity.hpp"
 #include <iostream>
 #include <pqxx/pqxx>
 #include <vector>
@@ -22,9 +23,10 @@ class UserRepository
 {
 public:
     explicit UserRepository();
-    void CreateUser(std::string name);
+    int CreateOrGetUser(std::string name);
     void SetUserStatus(std::string name, UserStatus status);
-    std::vector<std::string> GetOnlineUsers();
+    std::vector<entities::UserEntity> GetOnlineUsers();
+    int GetUserIdByName(std::string name);
 private:
     std::unique_ptr<pqxx::connection> db_connection_;
     const std::string kTableName = "users";

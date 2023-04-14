@@ -7,7 +7,7 @@
 namespace entities 
 {
 
-UserEntity::UserEntity(std::string name) : name_{name}
+UserEntity::UserEntity(std::string name, int id) : name_{name}, id_{id}
 {
 }
 

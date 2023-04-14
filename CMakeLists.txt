@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.22.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 project(bubba-server)
 
@@ -9,6 +10,8 @@ include_directories(
   entities/inc
   repositories/inc
   services/inc)
+
+add_subdirectory(protocols)
 
 add_library(
   ${CMAKE_PROJECT_NAME}-lib SHARED
@@ -22,6 +25,7 @@ add_library(
 
 target_link_libraries(
   ${CMAKE_PROJECT_NAME}-lib
+  protocol
   pqxx
   pq
 )

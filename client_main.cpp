@@ -3,7 +3,6 @@
 #include "chat_service.hpp"
 #include "client_socket.hpp"
 
-
 int main(){
 	std::string username;
 	std::cout << "Enter your name" << std::endl;
@@ -25,8 +24,18 @@ int main(){
 		std::cout << "Select one user to chat from the list above by name:" << std::endl;
 		std::string target_user;
 		std::cin >> target_user;
-		// TODO: continue
-	}
+		
+		std::cout << "------------" << std::endl;
+		std::cout << "Starting chat with " << target_user << " press [\\q] to return or type message below" << std::endl;
+		std::string message;
+		while (message != "\\q")
+		{
+			std::cout << std::endl;
+			std::cin >> message;
+			if (message != "\\q")
+				chat_service.SendMessage(message, target_user);
+		}
+	} 
 
 	return 0;
 }

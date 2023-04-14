@@ -1,5 +1,7 @@
 #include "server_socket.hpp"
 
+#include "chat_message.pb.h"
+
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -17,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <thread>
 
 namespace
 {
@@ -36,7 +39,7 @@ ServerSocket::ServerSocket()
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    getaddrinfo(address.data(), port.data(), &hints, &res);
+    (void) getaddrinfo(address.data(), port.data(), &hints, &res);
 
     if (int status = getaddrinfo(address.data(), port.data(), &hints, &res);
         status != 0)
@@ -78,33 +81,69 @@ ServerSocket::ServerSocket()
         throw std::runtime_error(err_msg.str());
     }
 
-    sockaddr_storage client_addr;
-    socklen_t client_addr_size;
-    int client_connection_fd =
-        accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_size);
-    if (client_connection_fd < 0)
+    while (1)
     {
-        std::stringstream err_msg;
-        err_msg << "Socket listen failed: " << std::strerror(errno) << "\n";
-        throw std::runtime_error(err_msg.str());
-    }
+        sockaddr_storage client_addr;
+        socklen_t client_addr_size;
+        int client_connection_fd =
+            accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_size);
 
-    char buffer[BUFFER_SIZE];
-    int bytes_read = recv(client_connection_fd, buffer, BUFFER_SIZE, 0);
-    if (bytes_read < 0)
-    {
-        std::stringstream err_msg;
-        err_msg << "Socket recv failed: " << std::strerror(errno) << "\n";
-        throw std::runtime_error(err_msg.str());
+        if (client_connection_fd < 0)
+        {
+            std::stringstream err_msg;
+            err_msg << "Socket listen failed: " << std::strerror(errno) << "\n";
+            throw std::runtime_error(err_msg.str());
+        }
+
+        std::thread th(&ServerSocket::ProcessClientRequest, this, client_connection_fd);
+        th.detach();
     }
-    std::cerr << "Message received: " << buffer << "\n";
 }
 
 ServerSocket::~ServerSocket()
 {
     std::cerr << "~ServerSocket:\n";
-    close(client_connection_fd);
+    for (const auto &client : client_map_) close(client.second);
     close(server_fd);
+}
+
+void ServerSocket::ProcessClientRequest(int client_connection_fd)
+{
+    char buffer[BUFFER_SIZE];
+    while (int bytes_read = recv(client_connection_fd, buffer, sizeof(buffer),0) != 0)
+    {
+        if (bytes_read < 0)
+        {
+            std::stringstream err_msg;
+            err_msg << "Socket recv failed: " << std::strerror(errno) << "\n";
+            throw std::runtime_error(err_msg.str());
+        }
+
+        protocol::ChatMessage rcv_message;
+        rcv_message.ParseFromString(buffer);
+
+        if (client_map_.find(rcv_message.sender_id()) == client_map_.end())
+            client_map_[rcv_message.sender_id()] = client_connection_fd;
+
+        if (rcv_message.has_destination_id()) 
+        {
+            int destination_connection_fd = client_map_[rcv_message.destination_id()];
+            
+            protocol::ChatMessage dst_message;
+            dst_message.set_sender_id(rcv_message.sender_id());
+            dst_message.set_sender_name(rcv_message.sender_name());
+            dst_message.set_msg(rcv_message.msg());
+            
+            auto msg = dst_message.SerializeAsString();
+            
+            if (send(destination_connection_fd, msg.c_str(), msg.size() + 1, 0) < 0)
+            {
+                std::stringstream err_msg;
+                err_msg << "Socket send failed: " << std::strerror(errno) << "\n";
+                throw std::runtime_error(err_msg.str());
+            }
+        }
+    }
 }
 
 } // namespace services

@@ -6,7 +6,7 @@ This repo contains the bubba chat server.
 
 
 ```
-sudo apt install install libpq-dev
+sudo apt install libpq-dev protobuf-compiler
 ```
 
 ### libpqxx - ver. 7.7.5:

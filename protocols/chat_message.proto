@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+package protocol;
+
+message ChatMessage {
+  optional int32 sender_id = 1;
+  optional int32 destination_id = 2;
+  optional string sender_name = 3;
+  optional string msg = 4;
+}
