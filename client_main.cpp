@@ -21,17 +21,18 @@ int main(){
 			std::cout << user.GetName() << std::endl;
 		}
 		std::cout << "------------" << std::endl;
-		std::cout << "Select one user to chat from the list above by name:" << std::endl;
+		std::cout << "Select one user to chat from the list above by name or press [\\r] to refresh:" << std::endl;
 		std::string target_user;
 		std::cin >> target_user;
+		if (target_user == "\\r") continue;
 		
 		std::cout << "------------" << std::endl;
-		std::cout << "Starting chat with " << target_user << " press [\\q] to return or type message below" << std::endl;
+		std::cout << "Starting chat with " << target_user << ", press [\\q] to return or type message below" << std::endl;
 		std::string message;
 		while (message != "\\q")
 		{
 			std::cout << std::endl;
-			std::cin >> message;
+			std::getline(std::cin, message);
 			if (message != "\\q")
 				chat_service.SendMessage(message, target_user);
 		}

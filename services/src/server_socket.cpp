@@ -122,14 +122,15 @@ void ServerSocket::ProcessClientRequest(int client_connection_fd)
         protocol::ChatMessage rcv_message;
         rcv_message.ParseFromString(buffer);
 
-        if (client_map_.find(rcv_message.sender_id()) == client_map_.end())
-            client_map_[rcv_message.sender_id()] = client_connection_fd;
+        auto sender_id = rcv_message.sender_id();
+        if (client_map_.find(sender_id) == client_map_.end())
+            client_map_[sender_id] = client_connection_fd;
 
+        protocol::ChatMessage dst_message;
         if (rcv_message.has_destination_id()) 
         {
             int destination_connection_fd = client_map_[rcv_message.destination_id()];
-            
-            protocol::ChatMessage dst_message;
+
             dst_message.set_sender_id(rcv_message.sender_id());
             dst_message.set_sender_name(rcv_message.sender_name());
             dst_message.set_msg(rcv_message.msg());
@@ -142,7 +143,24 @@ void ServerSocket::ProcessClientRequest(int client_connection_fd)
                 err_msg << "Socket send failed: " << std::strerror(errno) << "\n";
                 throw std::runtime_error(err_msg.str());
             }
+        } else {
+            // send back online users
+            dst_message.set_sender_id(rcv_message.sender_id());
+            for (const auto &client : client_map_) {
+                auto user = dst_message.add_online_users();
+                user->set_user_id(client.first); 
+            }
+            
+            auto msg = dst_message.SerializeAsString();
+            
+            if (send(client_connection_fd, msg.c_str(), msg.size() + 1, 0) < 0)
+            {
+                std::stringstream err_msg;
+                err_msg << "Socket send failed: " << std::strerror(errno) << "\n";
+                throw std::runtime_error(err_msg.str());
+            }
         }
+
     }
 }
 

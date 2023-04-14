@@ -7,4 +7,11 @@ message ChatMessage {
   optional int32 destination_id = 2;
   optional string sender_name = 3;
   optional string msg = 4;
+  
+  message OnlineUsers {
+    required int32 user_id = 1;
+  }
+
+  repeated OnlineUsers online_users = 6;
+
 }

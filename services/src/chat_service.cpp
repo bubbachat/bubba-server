@@ -18,9 +18,16 @@ void ChatService::CheckInUser(std::string name)
 
 std::vector<entities::UserEntity> ChatService::GetOnlineUsers()
 {
-    auto users = user_repository_->GetOnlineUsers();
-    users.erase(std::remove_if(users.begin(), users.end(),
-                             [&](entities::UserEntity& user) { return user.GetId() == user_->GetId(); }));
+    std::vector<entities::UserEntity> users;
+    // TODO improve design of trigger async/response for online users
+    client_socket_->TriggerUpdateOnlineUsersAsync(user_->GetId());
+    auto user_ids = client_socket_->GetOnlineUsers();
+    for (const auto &user_id : user_ids) {
+        if (user_id != user_->GetId()) {
+            auto user = user_repository_->GetUserById(user_id);
+            users.push_back(user);
+        }
+    }
     return users;
 }
 

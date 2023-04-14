@@ -41,21 +41,18 @@ void UserRepository::SetUserStatus(std::string name, UserStatus status)
     transaction.commit();
 }
 
-std::vector<entities::UserEntity> UserRepository::GetOnlineUsers()
-{
-    std::vector<entities::UserEntity> users;
-    pqxx::work transaction{*db_connection_};
-    for (const auto [id, name] : transaction.query<int, std::string>("SELECT id, username FROM users where present='1'"))
-    {
-        users.push_back(entities::UserEntity(name, id));
-    }
-    return users;
-}
-
 int UserRepository::GetUserIdByName(std::string name)
 {
     pqxx::work transaction{*db_connection_};
     return transaction.query_value<int>("SELECT id FROM users where username='" + name + "'");
+}
+
+entities::UserEntity UserRepository::GetUserById(int id)
+{
+    pqxx::work transaction{*db_connection_};
+    auto username = 
+        transaction.query_value<std::string>("SELECT username FROM users where id='" + std::to_string(id) + "'");
+    return entities::UserEntity(username, id);
 }
 
 } // namespace repositories 

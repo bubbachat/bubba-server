@@ -50,8 +50,8 @@ ClientSocket::ClientSocket(int id)
         throw std::runtime_error(err_msg.str());
     }
 
-    client_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    if (client_fd < 0)
+    client_fd_ = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (client_fd_ < 0)
     {
         std::stringstream err_msg;
         err_msg << "Socket creation failed: " << std::strerror(errno) << "\n";
@@ -59,7 +59,7 @@ ClientSocket::ClientSocket(int id)
     }
 
     int opt = 1;
-    if (setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
+    if (setsockopt(client_fd_, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
                    sizeof(opt)) < 0)
     {
         std::stringstream err_msg;
@@ -67,7 +67,7 @@ ClientSocket::ClientSocket(int id)
         throw std::runtime_error(err_msg.str());
     }
 
-    if (connect(client_fd, res->ai_addr, res->ai_addrlen) < 0)
+    if (connect(client_fd_, res->ai_addr, res->ai_addrlen) < 0)
     {
         std::stringstream err_msg;
         err_msg << "Socket connect failed: " << std::strerror(errno) << "\n";
@@ -78,15 +78,14 @@ ClientSocket::ClientSocket(int id)
     connect_msg.set_sender_id(id);
     auto msg = connect_msg.SerializeAsString();
 
-    if (send(client_fd, msg.c_str(), msg.size() + 1, 0) < 0)
+    if (send(client_fd_, msg.c_str(), msg.size() + 1, 0) < 0)
     {
         std::stringstream err_msg;
         err_msg << "Socket send failed: " << std::strerror(errno) << "\n";
         throw std::runtime_error(err_msg.str());
     }
-    std::cerr << "Message sent: " << msg << "\n";
 
-    std::thread th(&ClientSocket::ReceiveMessage, this, client_fd);
+    std::thread th(&ClientSocket::ReceiveMessage, this, client_fd_);
 
     th.detach();
 }
@@ -101,7 +100,22 @@ void ClientSocket::SendMessage(std::string message, std::string sender_name, int
 
     auto msg = snd_msg.SerializeAsString();
 
-    if (send(client_fd, msg.c_str(), msg.size() + 1, 0) < 0)
+    if (send(client_fd_, msg.c_str(), msg.size() + 1, 0) < 0)
+    {
+        std::stringstream err_msg;
+        err_msg << "Socket send failed: " << std::strerror(errno) << "\n";
+        throw std::runtime_error(err_msg.str());
+    }
+}
+
+void ClientSocket::TriggerUpdateOnlineUsersAsync(int sender_id) {
+    
+    protocol::ChatMessage snd_msg;
+    snd_msg.set_sender_id(sender_id);
+
+    auto msg = snd_msg.SerializeAsString();
+
+    if (send(client_fd_, msg.c_str(), msg.size() + 1, 0) < 0)
     {
         std::stringstream err_msg;
         err_msg << "Socket send failed: " << std::strerror(errno) << "\n";
@@ -112,7 +126,7 @@ void ClientSocket::SendMessage(std::string message, std::string sender_name, int
 ClientSocket::~ClientSocket()
 {
     std::cerr << "~ClientSocket:\n";
-    close(client_fd);
+    close(client_fd_);
 }
 
 void ClientSocket::ReceiveMessage(int client_fd)
@@ -130,7 +144,13 @@ void ClientSocket::ReceiveMessage(int client_fd)
         protocol::ChatMessage rcv_msg;
         rcv_msg.ParseFromString(buffer);
 
-        std::cout << green << rcv_msg.sender_name() << ": " << reset << rcv_msg.msg()  << "\n";
+        auto users = rcv_msg.online_users();
+        for (auto &user : users) {
+            online_users_.insert(user.user_id());
+        }
+
+        if (rcv_msg.has_msg())
+            std::cout << green << rcv_msg.sender_name() << ": " << reset << rcv_msg.msg()  << "\n";
     }
 }
 
