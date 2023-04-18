@@ -18,8 +18,8 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/un.h>
-#include <unistd.h>
 #include <thread>
+#include <unistd.h>
 
 namespace
 {
@@ -39,14 +39,12 @@ ServerSocket::ServerSocket()
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    (void) getaddrinfo(address.data(), port.data(), &hints, &res);
+    (void)getaddrinfo(address.data(), port.data(), &hints, &res);
 
-    if (int status = getaddrinfo(address.data(), port.data(), &hints, &res);
-        status != 0)
+    if (int status = getaddrinfo(address.data(), port.data(), &hints, &res); status != 0)
     {
         std::stringstream err_msg;
-        err_msg << "Socket getaddrinfo failed: " << gai_strerror(status)
-                << "\n";
+        err_msg << "Socket getaddrinfo failed: " << gai_strerror(status) << "\n";
         throw std::runtime_error(err_msg.str());
     }
 
@@ -59,8 +57,7 @@ ServerSocket::ServerSocket()
     }
 
     int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt)) < 0)
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0)
     {
         std::stringstream err_msg;
         err_msg << "Socket setsockopt failed: " << std::strerror(errno) << "\n";
@@ -85,8 +82,7 @@ ServerSocket::ServerSocket()
     {
         sockaddr_storage client_addr;
         socklen_t client_addr_size;
-        int client_connection_fd =
-            accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_size);
+        int client_connection_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_addr_size);
 
         if (client_connection_fd < 0)
         {
@@ -95,6 +91,7 @@ ServerSocket::ServerSocket()
             throw std::runtime_error(err_msg.str());
         }
 
+        std::cout << "Socket " << client_connection_fd << " connected" << std::endl;
         std::thread th(&ServerSocket::ProcessClientRequest, this, client_connection_fd);
         th.detach();
     }
@@ -103,14 +100,15 @@ ServerSocket::ServerSocket()
 ServerSocket::~ServerSocket()
 {
     std::cerr << "~ServerSocket:\n";
-    for (const auto &client : client_map_) close(client.second);
+    for (const auto &client : client_map_)
+        close(client.second);
     close(server_fd);
 }
 
 void ServerSocket::ProcessClientRequest(int client_connection_fd)
 {
     char buffer[BUFFER_SIZE];
-    while (int bytes_read = recv(client_connection_fd, buffer, sizeof(buffer),0) != 0)
+    while (int bytes_read = recv(client_connection_fd, buffer, sizeof(buffer), 0) != 0)
     {
         if (bytes_read < 0)
         {
@@ -127,32 +125,35 @@ void ServerSocket::ProcessClientRequest(int client_connection_fd)
             client_map_[sender_id] = client_connection_fd;
 
         protocol::ChatMessage dst_message;
-        if (rcv_message.has_destination_id()) 
+        if (rcv_message.has_destination_id())
         {
             int destination_connection_fd = client_map_[rcv_message.destination_id()];
 
             dst_message.set_sender_id(rcv_message.sender_id());
             dst_message.set_sender_name(rcv_message.sender_name());
             dst_message.set_msg(rcv_message.msg());
-            
+
             auto msg = dst_message.SerializeAsString();
-            
+
             if (send(destination_connection_fd, msg.c_str(), msg.size() + 1, 0) < 0)
             {
                 std::stringstream err_msg;
                 err_msg << "Socket send failed: " << std::strerror(errno) << "\n";
                 throw std::runtime_error(err_msg.str());
             }
-        } else {
+        }
+        else
+        {
             // send back online users
             dst_message.set_sender_id(rcv_message.sender_id());
-            for (const auto &client : client_map_) {
+            for (const auto &client : client_map_)
+            {
                 auto user = dst_message.add_online_users();
-                user->set_user_id(client.first); 
+                user->set_user_id(client.first);
             }
-            
+
             auto msg = dst_message.SerializeAsString();
-            
+
             if (send(client_connection_fd, msg.c_str(), msg.size() + 1, 0) < 0)
             {
                 std::stringstream err_msg;
@@ -160,8 +161,8 @@ void ServerSocket::ProcessClientRequest(int client_connection_fd)
                 throw std::runtime_error(err_msg.str());
             }
         }
-
     }
+    std::cout << "Socket " << client_connection_fd << " disconnected" << std::endl;
 }
 
 } // namespace services

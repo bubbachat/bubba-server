@@ -40,13 +40,10 @@ ClientSocket::ClientSocket(int id)
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    if (int status = getaddrinfo(server_address.data(), server_port.data(),
-                                 &hints, &res);
-        status != 0)
+    if (int status = getaddrinfo(server_address.data(), server_port.data(), &hints, &res); status != 0)
     {
         std::stringstream err_msg;
-        err_msg << "Socket getaddrinfo failed: " << gai_strerror(status)
-                << "\n";
+        err_msg << "Socket getaddrinfo failed: " << gai_strerror(status) << "\n";
         throw std::runtime_error(err_msg.str());
     }
 
@@ -59,8 +56,7 @@ ClientSocket::ClientSocket(int id)
     }
 
     int opt = 1;
-    if (setsockopt(client_fd_, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt)) < 0)
+    if (setsockopt(client_fd_, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0)
     {
         std::stringstream err_msg;
         err_msg << "Socket setsockopt failed: " << std::strerror(errno) << "\n";
@@ -90,8 +86,9 @@ ClientSocket::ClientSocket(int id)
     th.detach();
 }
 
-void ClientSocket::SendMessage(std::string message, std::string sender_name, int sender_id, int destination_id) {
-    
+void ClientSocket::SendMessage(std::string message, std::string sender_name, int sender_id, int destination_id)
+{
+
     protocol::ChatMessage snd_msg;
     snd_msg.set_sender_id(sender_id);
     snd_msg.set_destination_id(destination_id);
@@ -108,8 +105,9 @@ void ClientSocket::SendMessage(std::string message, std::string sender_name, int
     }
 }
 
-void ClientSocket::TriggerUpdateOnlineUsersAsync(int sender_id) {
-    
+void ClientSocket::TriggerUpdateOnlineUsersAsync(int sender_id)
+{
+
     protocol::ChatMessage snd_msg;
     snd_msg.set_sender_id(sender_id);
 
@@ -132,9 +130,8 @@ ClientSocket::~ClientSocket()
 void ClientSocket::ReceiveMessage(int client_fd)
 {
     char buffer[BUFFER_SIZE];
-    while (1)
+    while (int bytes_read = recv(client_fd, buffer, sizeof(buffer), 0) != 0)
     {
-        int bytes_read = recv(client_fd, buffer, sizeof(buffer),0);
         if (bytes_read < 0)
         {
             std::stringstream err_msg;
@@ -145,13 +142,15 @@ void ClientSocket::ReceiveMessage(int client_fd)
         rcv_msg.ParseFromString(buffer);
 
         auto users = rcv_msg.online_users();
-        for (auto &user : users) {
+        for (auto &user : users)
+        {
             online_users_.insert(user.user_id());
         }
 
         if (rcv_msg.has_msg())
-            std::cout << green << rcv_msg.sender_name() << ": " << reset << rcv_msg.msg()  << "\n";
+            std::cout << green << rcv_msg.sender_name() << ": " << reset << rcv_msg.msg() << "\n";
     }
+    std::cout << "Server disconnected" << std::endl;
 }
 
 } // namespace services
