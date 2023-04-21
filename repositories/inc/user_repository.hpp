@@ -1,5 +1,6 @@
 #pragma once
 
+#include "repository.hpp"
 #include "user_entity.hpp"
 #include <iostream>
 #include <pqxx/pqxx>
@@ -8,27 +9,14 @@
 namespace repositories
 {
 
-const std::string kDbHostName = "localhost";
-const std::string kDbName = "bubba";
-const std::string kDbPort = "5432";
-const std::string kDbUser = "postgres";
-
-enum class UserStatus : bool
-{
-    kOnline = true,
-    kOffline = false
-};
-
-class UserRepository
+class UserRepository : public IRepository<entities::UserEntity>
 {
 public:
     explicit UserRepository();
-    int CreateOrGetUser(std::string name);
-    void SetUserStatus(std::string name, UserStatus status);
-    int GetUserIdByName(std::string name);
-    entities::UserEntity GetUserById(int id);
+    virtual void Create(entities::UserEntity& entity);
+    entities::UserEntity GetByName(std::string name);
+    entities::UserEntity GetById(int id);
 private:
-    std::unique_ptr<pqxx::connection> db_connection_;
     const std::string kTableName = "users";
 };
 

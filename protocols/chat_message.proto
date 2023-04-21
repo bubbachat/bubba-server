@@ -12,6 +12,6 @@ message ChatMessage {
     required int32 user_id = 1;
   }
 
-  repeated OnlineUsers online_users = 6;
+  repeated OnlineUsers online_users = 5;
 
 }

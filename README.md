@@ -36,7 +36,7 @@ make
 
 # Running
 
-To run the server locally, including PostgreSQL, execute:
+To run the server locally, including PostgreSQL, run:
 
 ```bash
 sudo docker compose -f docker-compose-local.yml up -d

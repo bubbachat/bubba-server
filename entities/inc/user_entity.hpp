@@ -5,12 +5,13 @@
 namespace entities
 {
 
-class UserEntity 
+class UserEntity
 {
 public:
-    explicit UserEntity(std::string name, int id);
+    explicit UserEntity(std::string name, int id = 0);
     std::string GetName() const { return name_; };
     int GetId() const { return id_; };
+    void SetId(int id) { id_ = id; };
 
 private:
     std::string name_;

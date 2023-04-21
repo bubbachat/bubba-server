@@ -7,6 +7,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 project(bubba-server)
 
 include_directories(
+  bubba-client/inc  
+  db/inc  
   entities/inc
   repositories/inc
   services/inc)
@@ -15,7 +17,11 @@ add_subdirectory(protocols)
 
 add_library(
   ${CMAKE_PROJECT_NAME}-lib SHARED
+  bubba-client/src/client.cpp
+  db/src/db_connection.cpp
+  entities/src/message_entity.cpp
   entities/src/user_entity.cpp
+  repositories/src/message_repository.cpp
   repositories/src/user_repository.cpp
   server_main.cpp
   services/src/chat_service.cpp
